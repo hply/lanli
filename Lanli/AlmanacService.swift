@@ -2,7 +2,7 @@ import Foundation
 
 final class AlmanacService {
     static let shared = AlmanacService()
-    private let table: [String: AlmanacDay]
+    private let overlay: [String: AlmanacDay]
 
     private init() {
         var merged: [String: AlmanacDay] = [:]
@@ -20,12 +20,16 @@ final class AlmanacService {
            let decoded = try? decoder.decode([String: AlmanacDay].self, from: data) {
             merged = decoded
         }
-        table = merged
+        overlay = merged
     }
 
     func day(_ iso: String) -> AlmanacDay {
-        if let hit = table[iso] { return hit }
-        return AlmanacDay(m: "—", d: "—", c: "—", g: "—", s: "—", q: "", f: "", y: "", j: "")
+        if let hit = overlay[iso] { return hit }
+        let p = ISODate.parse(iso)
+        guard (1900...2100).contains(p.year) else {
+            return AlmanacDay(m: "—", d: "—", c: "—", g: "—", s: "—", q: "", f: "", y: "", j: "")
+        }
+        return Lunar.day(year: p.year, month: p.month, day: p.day)
     }
 }
 
