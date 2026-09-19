@@ -5,15 +5,22 @@ final class AlmanacService {
     private let table: [String: AlmanacDay]
 
     private init() {
-        guard
-            let url = Bundle.main.url(forResource: "Almanac", withExtension: "json"),
-            let data = try? Data(contentsOf: url),
-            let decoded = try? JSONDecoder().decode([String: AlmanacDay].self, from: data)
-        else {
-            table = [:]
-            return
+        var merged: [String: AlmanacDay] = [:]
+        let decoder = JSONDecoder()
+        for year in 1900...2100 {
+            guard let url = Bundle.main.url(forResource: "Almanac-\(year)", withExtension: "json") else { continue }
+            if let data = try? Data(contentsOf: url),
+               let decoded = try? decoder.decode([String: AlmanacDay].self, from: data) {
+                merged.merge(decoded) { _, new in new }
+            }
         }
-        table = decoded
+        if merged.isEmpty,
+           let url = Bundle.main.url(forResource: "Almanac", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let decoded = try? decoder.decode([String: AlmanacDay].self, from: data) {
+            merged = decoded
+        }
+        table = merged
     }
 
     func day(_ iso: String) -> AlmanacDay {
